@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mysql
+    container_name: mysql-container
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_DATABASE: frank_db
+      MYSQL_USER: rick
+      mysql_PASSWORD: admin
+      
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin-container
+    ports:
+      - 8080:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_DATABASE: frank_db
+      MYSQL_USER: rick
+      mysql_PASSWORD: admin
+    volumes:
+      - ./docker/phpmyadmin:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
+    depends_on: 
+      - db
+
+  webserver:
+    image: webdevops/php-apache:8.0
+    container_name: php-container
+    restart: unless-stopped
+    volumes:
+      - ./docker/webserver:/app
+    ports:
+      - 8888:80
+    networks:
+      - app-network
+
+  wordpress:
+    image: wordpress
+    restart: unless-stopped
+    ports:
+      - 8081:81
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: rick
+      WORDPRESS_DB_PASSWORD: admin
+      WORDPRESS_DB_NAME: frank_db
+    volumes:
+      - ./docker/webserver:/var/ww/html
+    depends_on:
+      - webserver
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db:
+  phpmyadmin:
+  webserver:
